@@ -26,6 +26,19 @@ docker-compose up postgres
 - App: http://localhost:9090
 - Postgres: localhost:5432
 
+## Test Credentials
+| Email | Password | Role | Tenant |
+|---|---|---|---|
+| admin@acme.com | admin123 | TENANT_ADMIN | Acme Corp |
+| user@acme.com | user123 | TENANT_USER | Acme Corp |
+| admin@beta.com | admin123 | TENANT_ADMIN | Beta Inc |
+
+## API Endpoints
+| Method | Endpoint | Auth Required | Description |
+|---|---|---|---|
+| POST | /auth/login | No | Returns JWT token |
+| GET | /auth/me | Yes | Returns current user + tenant |
+
 ## Environment Variables
 | Variable | Default |
 |---|---|
@@ -37,7 +50,7 @@ docker-compose up postgres
 - `entity/` — JPA entities (Tenant, User, Project, Task, Job)
 - `dto/` — Request and response DTOs
 - `exception/` — Global exception handler
-- `config/` — Spring configuration
+- `config/` — Spring configuration + DataSeeder
 - `security/` — JWT and security setup
 - `repository/` — JPA repositories
 - `service/` — Business logic
