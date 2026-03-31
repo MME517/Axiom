@@ -24,3 +24,7 @@ management:
   endpoint:
     health:
       show-details: always
+
+jwt:
+  secret: workhub-super-secret-key-must-be-at-least-256-bits-long-here
+  expiration: 86400000
