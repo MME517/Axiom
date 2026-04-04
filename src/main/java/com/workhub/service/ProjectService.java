@@ -3,16 +3,20 @@ package com.workhub.service;
 import com.workhub.dto.request.CreateProjectRequest;
 import com.workhub.dto.request.CreateTaskRequest;
 import com.workhub.dto.request.UpdateTaskRequest;
+import com.workhub.dto.response.ProjectDetailsResponse;
 import com.workhub.dto.response.ProjectResponse;
 import com.workhub.dto.response.TaskResponse;
+import com.workhub.entity.Job;
 import com.workhub.entity.Project;
 import com.workhub.entity.Task;
 import com.workhub.exception.ResourceNotFoundException;
+import com.workhub.repository.JobRepository;
 import com.workhub.repository.ProjectRepository;
 import com.workhub.repository.TaskRepository;
 import com.workhub.tenant.TenantContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -22,6 +26,7 @@ public class ProjectService {
 
     private final ProjectRepository projectRepository;
     private final TaskRepository taskRepository;
+    private final JobRepository jobRepository;
 
 
     public ProjectResponse createProject(CreateProjectRequest request,
@@ -46,17 +51,26 @@ public class ProjectService {
                 .toList();
     }
 
-    public ProjectResponse getProjectById(String projectId) {
+    public ProjectDetailsResponse getProjectById(String projectId) {
         String tenantId = TenantContext.getTenantId();
         Project project = projectRepository
                 .findByProjectIdAndTenantId(projectId, tenantId)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Project not found"));
-        return mapToProjectResponse(project);
+
+        List<TaskResponse> tasks = taskRepository
+                .findAllByProjectIdAndTenantId(projectId, tenantId)
+                .stream()
+                .map(this::mapToTaskResponse)
+                .toList();
+
+        return mapToProjectDetailsResponse(project, tasks);
     }
 
+    @Transactional
     public TaskResponse createTask(String projectId,
-                                   CreateTaskRequest request) {
+                                   CreateTaskRequest request,
+                                   boolean simulateFailure) {
         String tenantId = TenantContext.getTenantId();
 
         // Verify project belongs to tenant first
@@ -71,6 +85,18 @@ public class ProjectService {
                 .build();
 
         Task saved = taskRepository.save(task);
+
+        Job job = Job.builder()
+                .tenantId(tenantId)
+                .projectId(projectId)
+                .status("PENDING")
+                .build();
+        jobRepository.save(job);
+
+        if (simulateFailure) {
+            throw new IllegalStateException("Simulated transactional failure");
+        }
+
         return mapToTaskResponse(saved);
     }
 
@@ -95,6 +121,17 @@ public class ProjectService {
                 .name(project.getName())
                 .tenantId(project.getTenantId())
                 .createdBy(project.getCreatedBy())
+                .build();
+    }
+
+    private ProjectDetailsResponse mapToProjectDetailsResponse(Project project,
+                                                               List<TaskResponse> tasks) {
+        return ProjectDetailsResponse.builder()
+                .projectId(project.getProjectId())
+                .name(project.getName())
+                .tenantId(project.getTenantId())
+                .createdBy(project.getCreatedBy())
+                .tasks(tasks)
                 .build();
     }
 
