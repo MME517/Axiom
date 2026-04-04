@@ -2,9 +2,11 @@ package com.workhub.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
 import java.util.List;
 import java.util.Map;
 
@@ -17,10 +19,18 @@ public class GlobalExceptionHandler {
                 .body(Map.of("error", ex.getMessage(), "status", 404));
     }
 
-    @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<?> handleForbidden(AccessDeniedException ex) {
+    @ExceptionHandler(com.workhub.exception.AccessDeniedException.class)
+    public ResponseEntity<?> handleCustomForbidden(
+            com.workhub.exception.AccessDeniedException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(Map.of("error", ex.getMessage(), "status", 403));
+    }
+
+    // ← THIS IS THE FIX: catches Spring Security's AccessDeniedException
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<?> handleSecurityForbidden(AccessDeniedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(Map.of("error", "Access denied", "status", 403));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
