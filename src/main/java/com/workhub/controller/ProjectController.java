@@ -3,6 +3,7 @@ package com.workhub.controller;
 import com.workhub.dto.request.CreateProjectRequest;
 import com.workhub.dto.request.CreateTaskRequest;
 import com.workhub.dto.request.UpdateTaskRequest;
+import com.workhub.dto.response.ProjectDetailsResponse;
 import com.workhub.dto.response.ProjectResponse;
 import com.workhub.dto.response.TaskResponse;
 import com.workhub.service.ProjectService;
@@ -38,7 +39,7 @@ public class ProjectController {
     }
 
     @GetMapping("/projects/{id}")
-    public ResponseEntity<ProjectResponse> getProjectById(
+    public ResponseEntity<ProjectDetailsResponse> getProjectById(
             @PathVariable String id) {
         return ResponseEntity.ok(projectService.getProjectById(id));
     }
@@ -46,9 +47,11 @@ public class ProjectController {
     @PostMapping("/projects/{id}/tasks")
     public ResponseEntity<TaskResponse> createTask(
             @PathVariable String id,
-            @Valid @RequestBody CreateTaskRequest request) {
+            @Valid @RequestBody CreateTaskRequest request,
+            @RequestParam(name = "simulateFailure", defaultValue = "false")
+            boolean simulateFailure) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(projectService.createTask(id, request));
+                .body(projectService.createTask(id, request, simulateFailure));
     }
 
     @PatchMapping("/tasks/{id}")
