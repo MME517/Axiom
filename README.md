@@ -34,10 +34,15 @@ docker-compose up postgres
 | admin@beta.com | admin123 | TENANT_ADMIN | Beta Inc |
 
 ## API Endpoints
-| Method | Endpoint | Auth Required | Description |
-|---|---|---|---|
-| POST | /auth/login | No | Returns JWT token |
-| GET | /auth/me | Yes | Returns current user + tenant |
+| Method | Endpoint | Auth Required | Role Required | Description |
+|---|---|---|---|---|
+| POST | /auth/login | No | None | Returns JWT token |
+| GET | /auth/me | Yes | Any | Returns current user + tenant |
+| POST | /projects | Yes | TENANT_ADMIN | Create a new project |
+| GET | /projects | Yes | Any | List all projects (tenant-scoped) |
+| GET | /projects/{id} | Yes | Any | Get project by ID (tenant-scoped) |
+| POST | /projects/{id}/tasks | Yes | Any | Create a task under a project |
+| PATCH | /tasks/{id} | Yes | Any | Update task status |
 
 ## Environment Variables
 | Variable | Default |
