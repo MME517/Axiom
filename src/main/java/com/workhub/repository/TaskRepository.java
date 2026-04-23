@@ -10,9 +10,12 @@ import java.util.Optional;
 @Repository
 public interface TaskRepository extends JpaRepository<Task, String> {
 
-    // Get all tasks for a project within a tenant
+    // List tasks — scoped by BOTH projectId AND tenantId
     List<Task> findAllByProjectIdAndTenantId(String projectId, String tenantId);
 
-    // Get a task only if it belongs to the tenant
+    // Get single task — scoped by tenantId
     Optional<Task> findByTaskIdAndTenantId(String taskId, String tenantId);
+
+    // List ALL tasks for a tenant (for cross-tenant list test)
+    List<Task> findAllByTenantId(String tenantId);
 }
