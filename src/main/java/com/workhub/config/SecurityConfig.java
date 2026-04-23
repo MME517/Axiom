@@ -45,7 +45,10 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/login").permitAll()
-                        .requestMatchers("/actuator/**").permitAll()
+                        .requestMatchers("/actuator/health",
+                                "/actuator/health/readiness",
+                                "/actuator/health/liveness").permitAll()
+                        .requestMatchers("/actuator/**").hasAuthority("TENANT_ADMIN")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter,
