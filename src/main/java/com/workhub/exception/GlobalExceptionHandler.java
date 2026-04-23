@@ -66,4 +66,10 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", "Internal server error", "status", 500));
     }
+
+    @ExceptionHandler(TenantContextMissingException.class)
+    public ResponseEntity<?> handleTenantMissing(TenantContextMissingException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("error", ex.getMessage(), "status", 401));
+    }
 }
