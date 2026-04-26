@@ -9,3 +9,11 @@ spring:
 jwt:
   secret: test-secret-key-must-be-at-least-256-bits-long-here-ok
   expiration: 86400000
+
+workhub:
+  rabbitmq:
+    report-queue: report.generate
+    report-exchange: workhub.reports
+    report-routing-key: report.generate
+    dlq-name: report.generate.dlq
+    dlx-name: workhub.reports.dlx

@@ -12,6 +12,20 @@ spring:
     properties:
       hibernate:
         format_sql: true
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    listener:
+      simple:
+        retry:
+          enabled: true
+          initial-interval: 2000ms
+          max-attempts: 3
+          multiplier: 2.0
+          max-interval: 10000ms
+        default-requeue-rejected: false   # sends to DLQ after retries
 
 server:
   port: 8080
@@ -20,11 +34,26 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,readiness,liveness
+        include: health,info,metrics,readiness,liveness,prometheus,rabbitmq
   endpoint:
     health:
       show-details: always
+  metrics:
+    tags:
+      application: workhub
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] [correlationId=%X{correlationId:-}] %-5level %logger{36} - %msg%n"
 
 jwt:
   secret: workhub-super-secret-key-must-be-at-least-256-bits-long-here
   expiration: 86400000
+
+workhub:
+  rabbitmq:
+    report-queue: report.generate
+    report-exchange: workhub.reports
+    report-routing-key: report.generate
+    dlq-name: report.generate.dlq
+    dlx-name: workhub.reports.dlx

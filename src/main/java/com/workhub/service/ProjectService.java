@@ -5,21 +5,27 @@ import com.workhub.dto.request.CreateTaskRequest;
 import com.workhub.dto.request.UpdateTaskRequest;
 import com.workhub.dto.response.ProjectDetailsResponse;
 import com.workhub.dto.response.ProjectResponse;
+import com.workhub.dto.response.ReportJobResponse;
 import com.workhub.dto.response.TaskResponse;
 import com.workhub.entity.Job;
 import com.workhub.entity.Project;
 import com.workhub.entity.Task;
 import com.workhub.exception.ResourceNotFoundException;
+import com.workhub.messaging.ReportJobMessage;
+import com.workhub.messaging.ReportProducer;
 import com.workhub.repository.JobRepository;
 import com.workhub.repository.ProjectRepository;
 import com.workhub.repository.TaskRepository;
 import com.workhub.tenant.TenantContext;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ProjectService {
@@ -27,6 +33,7 @@ public class ProjectService {
     private final ProjectRepository projectRepository;
     private final TaskRepository taskRepository;
     private final JobRepository jobRepository;
+    private final ReportProducer reportProducer;
 
 
     public ProjectResponse createProject(CreateProjectRequest request,
@@ -114,6 +121,74 @@ public class ProjectService {
         return mapToTaskResponse(saved);
     }
 
+    // ── Async Report Generation ────────────────────────────────────────────
+
+    /**
+     * Step 1 (HTTP thread): creates a PENDING Job in the DB, publishes a
+     * RabbitMQ message, and returns immediately with 202 Accepted.
+     *
+     * @param projectId       target project
+     * @param userId          JWT subject (for audit)
+     * @param correlationId   end-to-end trace ID
+     */
+    @Transactional
+    public ReportJobResponse initiateReportGeneration(String projectId,
+                                                      String userId,
+                                                      String correlationId) {
+        MDC.put("correlationId", correlationId);
+        try {
+            String tenantId = TenantContext.getTenantId();
+
+            // Verify project ownership
+            projectRepository.findByProjectIdAndTenantId(projectId, tenantId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
+
+            // Create job record
+            Job job = Job.builder()
+                    .tenantId(tenantId)
+                    .projectId(projectId)
+                    .status("PENDING")
+                    .reportStatus("PENDING")
+                    .correlationId(correlationId)
+                    .build();
+            Job saved = jobRepository.save(job);
+
+            // Publish to RabbitMQ
+            ReportJobMessage message = ReportJobMessage.builder()
+                    .jobId(saved.getJobId())
+                    .projectId(projectId)
+                    .tenantId(tenantId)
+                    .correlationId(correlationId)
+                    .build();
+            reportProducer.publish(message);
+
+            log.info("[SERVICE] Report job initiated | jobId={} projectId={} userId={} correlationId={}",
+                    saved.getJobId(), projectId, userId, correlationId);
+
+            return mapToReportJobResponse(saved);
+
+        } finally {
+            MDC.remove("correlationId");
+        }
+    }
+
+    /**
+     * Polls the latest report job for a given project (within tenant scope).
+     */
+    public ReportJobResponse getReportStatus(String projectId) {
+        String tenantId = TenantContext.getTenantId();
+
+        // Verify project existence first
+        projectRepository.findByProjectIdAndTenantId(projectId, tenantId)
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
+
+        return jobRepository.findTopByProjectIdAndTenantIdOrderByCreatedAtDesc(projectId, tenantId)
+                .map(this::mapToReportJobResponse)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "No report job found for project " + projectId));
+    }
+
+    // ── Mappers ────────────────────────────────────────────────────────────
 
     private ProjectResponse mapToProjectResponse(Project project) {
         return ProjectResponse.builder()
@@ -142,6 +217,19 @@ public class ProjectService {
                 .tenantId(task.getTenantId())
                 .status(task.getStatus())
                 .version(task.getVersion())
+                .build();
+    }
+
+    private ReportJobResponse mapToReportJobResponse(Job job) {
+        return ReportJobResponse.builder()
+                .jobId(job.getJobId())
+                .projectId(job.getProjectId())
+                .tenantId(job.getTenantId())
+                .status(job.getStatus())
+                .reportStatus(job.getReportStatus())
+                .correlationId(job.getCorrelationId())
+                .createdAt(job.getCreatedAt())
+                .updatedAt(job.getUpdatedAt())
                 .build();
     }
 }

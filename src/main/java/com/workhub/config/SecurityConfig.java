@@ -45,9 +45,11 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/login").permitAll()
-                        .requestMatchers("/actuator/health",
+                        .requestMatchers(
+                                "/actuator/health",
                                 "/actuator/health/readiness",
                                 "/actuator/health/liveness").permitAll()
+                        // Prometheus & full actuator require TENANT_ADMIN token
                         .requestMatchers("/actuator/**").hasAuthority("TENANT_ADMIN")
                         .anyRequest().authenticated()
                 )
