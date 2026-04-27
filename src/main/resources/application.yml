@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/workhub
+    url: jdbc:postgresql://localhost:5434/workhub
     username: workhub_user
     password: workhub_pass
     driver-class-name: org.postgresql.Driver

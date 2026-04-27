@@ -1,4 +1,3 @@
-version: '3.8'
 
 services:
   postgres:
@@ -9,7 +8,7 @@ services:
       POSTGRES_USER: workhub_user
       POSTGRES_PASSWORD: workhub_pass
     ports:
-      - "5432:5432"
+      - "5434:5432"   # 5432 & 5433 occupied by native macOS Postgres
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
@@ -37,6 +36,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/workhub
       SPRING_DATASOURCE_USERNAME: workhub_user
       SPRING_DATASOURCE_PASSWORD: workhub_pass
+      # app container talks to postgres service name (internal port 5432 unchanged)
       SPRING_RABBITMQ_HOST: rabbitmq
       SPRING_RABBITMQ_PORT: 5672
       SPRING_RABBITMQ_USERNAME: guest
