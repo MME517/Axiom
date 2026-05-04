@@ -47,12 +47,11 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/login").permitAll()
-                        // Specific health endpoints BEFORE wildcard
-                        .requestMatchers("/actuator/health/readiness").permitAll()
-                        .requestMatchers("/actuator/health/liveness").permitAll()
-                        .requestMatchers("/actuator/health").permitAll()
-                        // Prometheus & full actuator require TENANT_ADMIN token
+                        // Actuator endpoints: health for all authenticated users, prometheus for TENANT_ADMIN only
+                        .requestMatchers("/actuator/health/**").authenticated()
+                        .requestMatchers("/actuator/prometheus").hasAuthority("TENANT_ADMIN")
                         .requestMatchers("/actuator/**").hasAuthority("TENANT_ADMIN")
+                        // All other endpoints require authentication
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(correlationIdFilter,

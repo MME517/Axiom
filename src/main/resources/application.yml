@@ -38,6 +38,18 @@ management:
   endpoint:
     health:
       show-details: always
+      probes:
+        enabled: true
+      group:
+        liveness:
+          include: livenessState,ping
+        readiness:
+          include: readinessState,db,rabbit
+  health:
+    livenessState:
+      enabled: true
+    readinessState:
+      enabled: true
   metrics:
     tags:
       application: workhub

@@ -24,6 +24,14 @@ public class TenantFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain chain)
             throws ServletException, IOException {
+        
+        // Skip tenant context for public health endpoints
+        String requestUri = request.getRequestURI();
+        if (isPublicHealthEndpoint(requestUri)) {
+            chain.doFilter(request, response);
+            return;
+        }
+        
         try {
             Authentication authentication =
                     SecurityContextHolder.getContext().getAuthentication();
@@ -51,5 +59,17 @@ public class TenantFilter extends OncePerRequestFilter {
             // Always clear — guarantees no tenant leakage
             TenantContext.clear();
         }
+    }
+
+    /**
+     * Check if the request is to a public health endpoint that doesn't require tenant context
+     */
+    private boolean isPublicHealthEndpoint(String requestUri) {
+        return requestUri.equals("/health/liveness") ||
+               requestUri.equals("/health/readiness") ||
+               requestUri.equals("/actuator/health") ||
+               requestUri.equals("/actuator/health/liveness") ||
+               requestUri.equals("/actuator/health/readiness") ||
+               requestUri.equals("/auth/login");
     }
 }
