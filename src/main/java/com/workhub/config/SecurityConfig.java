@@ -1,5 +1,6 @@
 package com.workhub.config;
 
+import com.workhub.filter.CorrelationIdFilter;
 import com.workhub.security.JwtAuthFilter;
 import com.workhub.tenant.TenantFilter;
 import jakarta.servlet.http.HttpServletResponse;
@@ -22,6 +23,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+    private final CorrelationIdFilter correlationIdFilter;
     private final JwtAuthFilter jwtAuthFilter;
     private final TenantFilter tenantFilter;
 
@@ -53,6 +55,8 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/**").hasAuthority("TENANT_ADMIN")
                         .anyRequest().authenticated()
                 )
+                .addFilterBefore(correlationIdFilter,
+                        UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthFilter,
                         UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(tenantFilter, JwtAuthFilter.class);
