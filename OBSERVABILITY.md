@@ -120,22 +120,36 @@ Every log line emitted during message processing includes the
 2026-04-26 21:00:00 [rabbit-listener-1] [correlationId=3fa85f64-...] INFO  c.w.messaging.ReportConsumer - [CONSUMER] Received report job | messageId=... jobId=... projectId=...
 ```
 
-The correlation ID lifecycle:
+### 5.1 Correlation ID Injection (CorrelationIdFilter)
+
+The `CorrelationIdFilter` (in `com.workhub.filter`) runs early in the request chain:
+- Extracts `X-Correlation-ID` header from HTTP requests
+- Auto-generates a new UUID if header is absent
+- Places the ID in SLF4J MDC for the request lifetime
+- Echoes the ID back in the response `X-Correlation-ID` header
+- Cleans up MDC after request completes (prevents leaks in thread pools)
+
+### 5.2 The correlation ID lifecycle:
 
 ```
 Client HTTP Request
   → X-Correlation-ID: <uuid>        (or server auto-generates one)
   ↓
+CorrelationIdFilter (early in filter chain)
+  → MDC.put("correlationId", <uuid>)
+  ↓
 POST /projects/{id}/generate-report (202)
+  → ProjectService places correlationId in Job record
+  → ReportProducer includes correlationId in AMQP message
   → X-Correlation-ID: <uuid>        (echoed in response header)
   ↓
 RabbitMQ message.correlationId = <uuid>
   ↓
-ReportConsumer MDC.put("correlationId", <uuid>)
+ReportConsumer extracts correlationId from payload
+  → MDC.put("correlationId", <uuid>)
   ↓
 All consumer log lines carry the correlationId
-  ↓
-Job.correlationId = <uuid>           (persisted to DB)
+  → Stored in Job.correlationId in database
 ```
 
 To trace a single request end-to-end:
