@@ -13,10 +13,13 @@ import com.workhub.entity.Task;
 import com.workhub.exception.ResourceNotFoundException;
 import com.workhub.messaging.ReportJobMessage;
 import com.workhub.messaging.ReportProducer;
+import com.workhub.entity.OutboxEvent;
 import com.workhub.repository.JobRepository;
+import com.workhub.repository.OutboxEventRepository;
 import com.workhub.repository.ProjectRepository;
 import com.workhub.repository.TaskRepository;
 import com.workhub.tenant.TenantContext;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
@@ -33,7 +36,8 @@ public class ProjectService {
     private final ProjectRepository projectRepository;
     private final TaskRepository taskRepository;
     private final JobRepository jobRepository;
-    private final ReportProducer reportProducer;
+    private final OutboxEventRepository outboxEventRepository;
+    private final ObjectMapper objectMapper;
 
 
     public ProjectResponse createProject(CreateProjectRequest request,
@@ -153,16 +157,31 @@ public class ProjectService {
                     .build();
             Job saved = jobRepository.save(job);
 
-            // Publish to RabbitMQ
+            // Create Outbox Event instead of direct publishing
             ReportJobMessage message = ReportJobMessage.builder()
                     .jobId(saved.getJobId())
                     .projectId(projectId)
                     .tenantId(tenantId)
                     .correlationId(correlationId)
                     .build();
-            reportProducer.publish(message);
 
-            log.info("[SERVICE] Report job initiated | jobId={} projectId={} userId={} correlationId={}",
+            try {
+                String payload = objectMapper.writeValueAsString(message);
+                OutboxEvent outboxEvent = OutboxEvent.builder()
+                        .aggregateId(saved.getJobId())
+                        .aggregateType("JOB")
+                        .eventType("REPORT_GENERATION_REQUESTED")
+                        .payload(payload)
+                        .status("PENDING")
+                        .correlationId(correlationId)
+                        .build();
+                outboxEventRepository.save(outboxEvent);
+            } catch (Exception e) {
+                log.error("[SERVICE] Failed to serialize report job message", e);
+                throw new RuntimeException("Failed to initiate report generation due to serialization error");
+            }
+
+            log.info("[SERVICE] Report job initiated and outboxed | jobId={} projectId={} userId={} correlationId={}",
                     saved.getJobId(), projectId, userId, correlationId);
 
             return mapToReportJobResponse(saved);

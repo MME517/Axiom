@@ -72,27 +72,21 @@ public class ProjectController {
      * {@code GET /projects/{id}/report-status} to check completion.
      *
      * @param id              project UUID
-     * @param correlationId   optional X-Correlation-ID header; auto-generated if absent
      * @param authentication  current JWT principal
      */
     @PostMapping("/projects/{id}/generate-report")
     public ResponseEntity<ReportJobResponse> generateReport(
             @PathVariable String id,
-            @RequestHeader(value = "X-Correlation-ID", required = false) String correlationId,
             Authentication authentication) {
 
-        // Propagate or mint a correlation ID for end-to-end tracing
-        String effectiveCorrelationId =
-                (correlationId != null && !correlationId.isBlank())
-                        ? correlationId
-                        : UUID.randomUUID().toString();
+        // Use the correlation ID provided by CorrelationIdFilter (via MDC)
+        String effectiveCorrelationId = org.slf4j.MDC.get("correlationId");
 
         String userId = (String) authentication.getPrincipal();
         ReportJobResponse response =
                 projectService.initiateReportGeneration(id, userId, effectiveCorrelationId);
 
         return ResponseEntity.status(HttpStatus.ACCEPTED)
-                .header("X-Correlation-ID", effectiveCorrelationId)
                 .body(response);
     }
 

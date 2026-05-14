@@ -6,6 +6,7 @@ import com.workhub.entity.Job;
 import com.workhub.messaging.ReportJobMessage;
 import com.workhub.messaging.ReportProducer;
 import com.workhub.repository.JobRepository;
+import com.workhub.repository.OutboxEventRepository;
 import com.workhub.repository.ProcessedMessageRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -78,6 +79,7 @@ class MessagingReliabilityTest {
     @Autowired private ObjectMapper objectMapper;
     @Autowired private JobRepository jobRepository;
     @Autowired private ProcessedMessageRepository processedMessageRepository;
+    @Autowired private OutboxEventRepository outboxEventRepository;
     @Autowired private ReportProducer reportProducer;
     @Autowired private RabbitTemplate rabbitTemplate;
 
@@ -88,8 +90,9 @@ class MessagingReliabilityTest {
     private String reportRoutingKey;
 
     @BeforeEach
-    void clearIdempotencyTable() {
+    void clearDatabase() {
         processedMessageRepository.deleteAll();
+        outboxEventRepository.deleteAll();
     }
 
     // ══════════════════════════════════════════════════════════════════════
