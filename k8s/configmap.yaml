@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: workhub-config
+  namespace: workhub
+data:
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres-service:5432/workhub"
+  SPRING_RABBITMQ_HOST: "rabbitmq-service"
+  SPRING_RABBITMQ_PORT: "5672"
+  SPRING_PROFILES_ACTIVE: "prod"
+  SERVER_PORT: "8080"
