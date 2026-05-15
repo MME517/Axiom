@@ -48,7 +48,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/login").permitAll()
                         // Actuator endpoints: health for all authenticated users, prometheus for TENANT_ADMIN only
-                        .requestMatchers("/actuator/health/**").authenticated()
+                        .requestMatchers("/actuator/health/**").permitAll()
                         .requestMatchers("/actuator/prometheus").hasAuthority("TENANT_ADMIN")
                         .requestMatchers("/actuator/**").hasAuthority("TENANT_ADMIN")
                         // All other endpoints require authentication
