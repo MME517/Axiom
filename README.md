@@ -98,6 +98,49 @@ docker-compose up postgres
 bash demo-phase2.sh
 ```
 
+## PHASE 3 — Week 14: Cloud-Native Delivery + IaC + CI
+
+## Kubernetes Deployment (Local - Minikube)
+
+### Prerequisites
+- Minikube
+- kubectl
+
+### Steps
+```bash
+# Start Minikube
+minikube start --driver=docker
+
+# Point Docker to Minikube
+eval $(minikube docker-env)
+
+# Build image inside Minikube
+docker build -t workhub-app:latest .
+
+# Apply manifests in order
+kubectl apply -f k8s/namespace.yaml
+kubectl apply -f k8s/secret.yaml
+kubectl apply -f k8s/configmap.yaml
+kubectl apply -f k8s/postgres-deployment.yaml
+kubectl apply -f k8s/rabbitmq-deployment.yaml
+kubectl apply -f k8s/deployment.yaml
+kubectl apply -f k8s/service.yaml
+
+# Verify everything is running
+kubectl get all -n workhub
+```
+
+### K8s Manifests
+| File | Description |
+|---|---|
+| `namespace.yaml` | Creates workhub namespace |
+| `configmap.yaml` | App environment configuration |
+| `secret.yaml` | Credentials and JWT secret |
+| `postgres-deployment.yaml` | Postgres DB + Service |
+| `rabbitmq-deployment.yaml` | RabbitMQ + Service |
+| `deployment.yaml` | App Deployment with liveness/readiness probes |
+| `service.yaml` | Exposes app on port 80 |
+
 ### Key Documentation
 - **OBSERVABILITY.md** — Health checks, metrics, correlation ID tracing
 - **TENANT-ISOLATION-PROOF.md** — Cross-tenant access denial proof
