@@ -23,60 +23,91 @@ export const options = {
   },
 };
 
-const BASE_URL = 'http://localhost:8080';
-const TOKEN    = 'JWT_TOKEN';
+const BASE_URL = 'http://127.0.0.1:59673';
+
+const TOKEN = 'Your_jwt_token';
 
 const HEADERS = {
-  'Authorization': `Bearer ${TOKEN}`,
+  Authorization: `Bearer ${TOKEN}`,
   'Content-Type': 'application/json',
 };
 
 export default function () {
 
-  const listRes = http.get(`${BASE_URL}/projects`, { headers: HEADERS });
+  // GET /projects
+  const listRes = http.get(`${BASE_URL}/projects`, {
+    headers: HEADERS,
+  });
+
   requestCount.add(1);
   projectDuration.add(listRes.timings.duration);
 
   const listOk = check(listRes, {
-    'GET /projects → 200':        (r) => r.status === 200,
-    'GET /projects → has body':   (r) => r.body && r.body.length > 0,
-    'GET /projects < 500ms':      (r) => r.timings.duration < 500,
+    'GET /projects → 200':      (r) => r.status === 200,
+    'GET /projects → has body': (r) => r.body && r.body.length > 0,
+    'GET /projects < 500ms':    (r) => r.timings.duration < 500,
   });
+
   errorRate.add(!listOk);
 
   sleep(0.5);
 
+  // POST /auth/login
   const loginPayload = JSON.stringify({
     email: 'admin@acme.com',
     password: 'admin123',
   });
-  const loginRes = http.post(`${BASE_URL}/auth/login`, loginPayload, {
-    headers: { 'Content-Type': 'application/json' },
-  });
+
+  const loginRes = http.post(
+    `${BASE_URL}/auth/login`,
+    loginPayload,
+    {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    }
+  );
+
   requestCount.add(1);
 
   const loginOk = check(loginRes, {
-    'POST /auth/login → 200':    (r) => r.status === 200,
-    'login returns token':       (r) => {
-      try { return JSON.parse(r.body).token !== undefined; }
-      catch { return false; }
+    'POST /auth/login → 200': (r) => r.status === 200,
+    'login returns token':    (r) => {
+      try {
+        return JSON.parse(r.body).token !== undefined;
+      } catch {
+        return false;
+      }
     },
-    'login < 500ms':             (r) => r.timings.duration < 500,
+    'login < 500ms':          (r) => r.timings.duration < 500,
   });
+
   errorRate.add(!loginOk);
 
   sleep(0.5);
 
-  const healthRes = http.get(`${BASE_URL}/actuator/health`);
+  // GET /actuator/health
+  const healthRes = http.get(
+    `${BASE_URL}/actuator/health`,
+    {
+      headers: HEADERS,
+    }
+  );
+
   requestCount.add(1);
 
-  check(healthRes, {
+  const healthOk = check(healthRes, {
     'GET /actuator/health → 200': (r) => r.status === 200,
     'health status UP':           (r) => {
-      try { return JSON.parse(r.body).status === 'UP'; }
-      catch { return false; }
+      try {
+        return JSON.parse(r.body).status === 'UP';
+      } catch {
+        return false;
+      }
     },
   });
+
+  errorRate.add(!healthOk);
 
   sleep(1);
 }
