@@ -19,25 +19,29 @@ spec:
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
+
           envFrom:
             - configMapRef:
                 name: workhub-config
             - secretRef:
                 name: workhub-secret
+
           livenessProbe:
             httpGet:
               path: /actuator/health/liveness
               port: 8080
-            initialDelaySeconds: 60
+            initialDelaySeconds: 90
             periodSeconds: 30
             failureThreshold: 3
+
           readinessProbe:
             httpGet:
               path: /actuator/health/readiness
               port: 8080
-            initialDelaySeconds: 30
+            initialDelaySeconds: 60
             periodSeconds: 10
             failureThreshold: 3
+
           resources:
             requests:
               memory: "256Mi"
