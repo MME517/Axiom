@@ -144,3 +144,31 @@ kubectl get all -n workhub
 ### Key Documentation
 - **OBSERVABILITY.md** — Health checks, metrics, correlation ID tracing
 - **TENANT-ISOLATION-PROOF.md** — Cross-tenant access denial proof
+
+## CI/CD Pipeline
+ 
+The project uses GitHub Actions for continuous integration. The pipeline is defined in `.github/workflows/ci.yml` and runs automatically on every push to `main`, `master`, or `dev`, and on all pull requests.
+ 
+### Pipeline Jobs
+ 
+**Job 1 — Build & Run Tests** (`build-and-test`)
+- Sets up JDK 21
+- Builds the project JAR (`mvn clean package -DskipTests`)
+- Runs all tests including integration tests (`mvn test`)
+- Starts a real RabbitMQ broker as a service container so the Spring context loads correctly
+- `MessagingReliabilityTest` uses Testcontainers to spin up its own isolated broker
+- Uploads Surefire test reports as a build artifact
+**Job 2 — Build Docker Image** (`build-docker-image`)
+- Runs only if Job 1 passes (`needs: build-and-test`)
+- Builds the Docker image using the project `Dockerfile`
+- Uses GitHub Actions layer caching to speed up subsequent builds
+### Pipeline Triggers
+ 
+| Event | Branches |
+|---|---|
+| `push` | `main`, `master`, `dev` |
+| `pull_request` | `main`, `master` |
+ 
+### Viewing Pipeline Results
+ 
+Go to the **Actions** tab in the GitHub repository to see all pipeline runs. Each run shows per-step logs and uploaded test result artifacts.
