@@ -1,0 +1,66 @@
+# ============================================================================
+# WorkHub — Terraform Variables Example
+# Copy this file to terraform.tfvars and fill in the values.
+#
+#   cp terraform.tfvars.example terraform.tfvars
+#
+# ⚠️  NEVER commit terraform.tfvars — it contains secrets.
+#     Only this .example template should be version-controlled.
+# ============================================================================
+
+# ---------------------------------------------------------------------------
+# Kubernetes Provider
+# ---------------------------------------------------------------------------
+kubeconfig_path    = "~/.kube/config"
+kubeconfig_context = "minikube"
+
+# ---------------------------------------------------------------------------
+# Namespace & Profile
+# ---------------------------------------------------------------------------
+namespace      = "workhub"
+spring_profile = "prod"
+
+# ---------------------------------------------------------------------------
+# Application
+# ---------------------------------------------------------------------------
+app_image         = "workhub-app:latest"
+image_pull_policy = "IfNotPresent"
+app_replicas      = 1
+app_port          = 8080
+service_type      = "ClusterIP"
+
+# ---------------------------------------------------------------------------
+# PostgreSQL — ⚠️ Replace with real credentials
+# ---------------------------------------------------------------------------
+postgres_image = "postgres:15"
+db_name        = "workhub"
+db_username    = "CHANGE_ME"
+db_password    = "CHANGE_ME"
+
+# ---------------------------------------------------------------------------
+# RabbitMQ — ⚠️ Replace with real credentials
+# ---------------------------------------------------------------------------
+rabbitmq_image    = "rabbitmq:3.13-management"
+rabbitmq_username = "CHANGE_ME"
+rabbitmq_password = "CHANGE_ME"
+
+# ---------------------------------------------------------------------------
+# JWT — ⚠️ Replace with a strong 256-bit+ secret
+# ---------------------------------------------------------------------------
+jwt_secret = "CHANGE_ME_TO_A_STRONG_256BIT_SECRET"
+
+# ---------------------------------------------------------------------------
+# Resource Limits (optional — defaults are fine for Minikube)
+# ---------------------------------------------------------------------------
+# app_memory_request      = "256Mi"
+# app_memory_limit        = "512Mi"
+# app_cpu_request         = "250m"
+# app_cpu_limit           = "500m"
+# postgres_memory_request = "256Mi"
+# postgres_memory_limit   = "512Mi"
+# postgres_cpu_request    = "250m"
+# postgres_cpu_limit      = "500m"
+# rabbitmq_memory_request = "256Mi"
+# rabbitmq_memory_limit   = "512Mi"
+# rabbitmq_cpu_request    = "250m"
+# rabbitmq_cpu_limit      = "500m"
