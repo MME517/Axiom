@@ -45,9 +45,9 @@
 |---|---|---|---|
 | `error_rate` | < 1% | **24.63%** |  FAIL |
 | `http_req_duration` p(95) | < 500ms | **4.23s** |  FAIL |
-| `http_req_failed` | < 1% | **0.00%** | ✅ PASS |
+| `http_req_failed` | < 1% | **0.00%** |  PASS |
 | `project_list_duration` p(95) | < 400ms | **699.41ms** |  FAIL |
-| `task_update_duration` p(95) | < 600ms | **0s** | ✅ PASS |
+| `task_update_duration` p(95) | < 600ms | **0s** |  PASS |
 
 ---
 
