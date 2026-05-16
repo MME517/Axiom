@@ -397,8 +397,30 @@ readinessProbe:
 ```
 
 ---
+## 7. Blue/Green Deployment Strategy
 
-## 7. Demo Script
+The `k8s/` folder contains two app deployments:
+- `deployment.yaml` — **blue** (current stable version)
+- `deployment-green.yaml` — **green** (new version being rolled out)
+
+Both share the same Service selector (`app: workhub-app`), so
+traffic is controlled by scaling replicas up or down.
+
+### Switching traffic to green
+```bash
+kubectl scale deployment workhub-app-green --replicas=1 -n workhub
+kubectl scale deployment workhub-app       --replicas=0 -n workhub
+```
+
+### Rolling back to blue
+```bash
+kubectl scale deployment workhub-app       --replicas=1 -n workhub
+kubectl scale deployment workhub-app-green --replicas=0 -n workhub
+```
+
+Green starts at 0 replicas by default — blue serves all traffic
+until an intentional cutover.
+## 8. Demo Script
 
 Run the Phase 3 deployment demo to validate the full end-to-end integration:
 
