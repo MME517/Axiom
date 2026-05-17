@@ -1,10 +1,10 @@
 package com.workhub.config;
 
 import com.workhub.filter.CorrelationIdFilter;
+import com.workhub.filter.RateLimitFilter;
 import com.workhub.security.JwtAuthFilter;
 import com.workhub.tenant.TenantFilter;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -20,12 +20,22 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
-@RequiredArgsConstructor
 public class SecurityConfig {
 
     private final CorrelationIdFilter correlationIdFilter;
     private final JwtAuthFilter jwtAuthFilter;
     private final TenantFilter tenantFilter;
+    private final RateLimitFilter rateLimitFilter;
+
+    public SecurityConfig(CorrelationIdFilter correlationIdFilter,
+                          JwtAuthFilter jwtAuthFilter,
+                          TenantFilter tenantFilter,
+                          RateLimitFilter rateLimitFilter) {
+        this.correlationIdFilter = correlationIdFilter;
+        this.jwtAuthFilter = jwtAuthFilter;
+        this.tenantFilter = tenantFilter;
+        this.rateLimitFilter = rateLimitFilter;
+    }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -47,18 +57,17 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/login").permitAll()
-                        // Actuator endpoints: health for all authenticated users, prometheus for TENANT_ADMIN only
                         .requestMatchers("/actuator/health/**").permitAll()
                         .requestMatchers("/actuator/prometheus").hasAuthority("TENANT_ADMIN")
                         .requestMatchers("/actuator/**").hasAuthority("TENANT_ADMIN")
-                        // All other endpoints require authentication
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(correlationIdFilter,
                         UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthFilter,
                         UsernamePasswordAuthenticationFilter.class)
-                .addFilterAfter(tenantFilter, JwtAuthFilter.class);
+                .addFilterAfter(tenantFilter, JwtAuthFilter.class)
+                .addFilterAfter(rateLimitFilter, TenantFilter.class);
 
         return http.build();
     }
